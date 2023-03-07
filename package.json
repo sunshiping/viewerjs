@@ -1,7 +1,7 @@
 {
-  "name": "viewerjs",
+  "name": "viewer-plus",
   "description": "JavaScript image viewer.",
-  "version": "1.11.3",
+  "version": "0.0.1",
   "main": "dist/viewer.common.js",
   "module": "dist/viewer.esm.js",
   "browser": "dist/viewer.js",
@@ -34,7 +34,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/fengyuanchen/viewerjs.git"
+    "url": "git+https://github.com/sunshiping/viewerjs.git"
   },
   "keywords": [
     "image",
@@ -48,14 +48,14 @@
     "web"
   ],
   "author": {
-    "name": "Chen Fengyuan",
-    "url": "https://chenfengyuan.com/"
+    "name": "sunshiping",
+    "url": "https://github.com/sunshiping/"
   },
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/fengyuanchen/viewerjs/issues"
+    "url": "https://github.com/sunshiping/viewerjs/issues"
   },
-  "homepage": "https://fengyuanchen.github.io/viewerjs",
+  "homepage": "https://github.com/sunshiping/",
   "devDependencies": {
     "@babel/core": "^7.21.0",
     "@babel/preset-env": "^7.20.2",
