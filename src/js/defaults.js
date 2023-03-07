@@ -68,6 +68,8 @@ export default {
     'sizes',
     'srcset',
     'useMap',
+    'data-width',
+    'data-height',
   ],
 
   /**
@@ -195,7 +197,7 @@ export default {
    * Define the CSS `z-index` value of viewer in modal mode.
    * @type {number}
    */
-  zIndex: 2015,
+  zIndex: 9999,
 
   /**
    * Define the CSS `z-index` value of viewer in inline mode.
@@ -231,6 +233,9 @@ export default {
    * Event shortcuts.
    * @type {Function}
    */
+  list: [],
+  thumbSize: '',
+  imgSize: '',
   ready: null,
   show: null,
   shown: null,

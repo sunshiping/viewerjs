@@ -5,7 +5,7 @@
  * Copyright 2015-present Chen Fengyuan
  * Released under the MIT license
  *
- * Date: 2023-03-07T03:49:26.348Z
+ * Date: 2023-03-07T04:42:16.474Z
  */
 
 'use strict';
@@ -143,7 +143,7 @@ var DEFAULTS = {
    * Define the extra attributes to inherit from the original image.
    * @type {Array}
    */
-  inheritedAttributes: ['crossOrigin', 'decoding', 'isMap', 'loading', 'referrerPolicy', 'sizes', 'srcset', 'useMap'],
+  inheritedAttributes: ['crossOrigin', 'decoding', 'isMap', 'loading', 'referrerPolicy', 'sizes', 'srcset', 'useMap', 'data-width', 'data-height'],
   /**
    * Define the initial coverage of the viewing image.
    * @type {number}
@@ -249,7 +249,7 @@ var DEFAULTS = {
    * Define the CSS `z-index` value of viewer in modal mode.
    * @type {number}
    */
-  zIndex: 2015,
+  zIndex: 9999,
   /**
    * Define the CSS `z-index` value of viewer in inline mode.
    * @type {number}
@@ -279,6 +279,9 @@ var DEFAULTS = {
    * Event shortcuts.
    * @type {Function}
    */
+  list: [],
+  thumbSize: '',
+  imgSize: '',
   ready: null,
   show: null,
   shown: null,
@@ -831,35 +834,73 @@ var IS_SAFARI = WINDOW.navigator && /(Macintosh|iPhone|iPod|iPad).*AppleWebKit/i
  * @returns {HTMLImageElement} The new image.
  */
 function getImageNaturalSizes(image, options, callback) {
-  var newImage = document.createElement('img');
+  if (options.list && options.list.length) {
+    var height = image.getAttribute('data-height') ? Number(image.getAttribute('data-height')) : 0;
+    var width = image.getAttribute('data-width') ? Number(image.getAttribute('data-width')) : 0;
+    if (width > 0 && height > 0) {
+      callback(width, height);
+    } else {
+      var newImage = document.createElement('img');
 
-  // Modern browsers (except Safari)
-  if (image.naturalWidth && !IS_SAFARI) {
-    callback(image.naturalWidth, image.naturalHeight);
-    return newImage;
-  }
-  var body = document.body || document.documentElement;
-  newImage.onload = function () {
-    callback(newImage.width, newImage.height);
+      // Modern browsers (except Safari)
+      if (image.naturalWidth && !IS_SAFARI) {
+        callback(image.naturalWidth, image.naturalHeight);
+        return newImage;
+      }
+      var body = document.body || document.documentElement;
+      newImage.onload = function () {
+        callback(newImage.width, newImage.height);
+        if (!IS_SAFARI) {
+          body.removeChild(newImage);
+        }
+      };
+      forEach(options.inheritedAttributes, function (name) {
+        var value = image.getAttribute(name);
+        if (value !== null) {
+          newImage.setAttribute(name, value);
+        }
+      });
+      newImage.src = image.src;
+
+      // iOS Safari will convert the image automatically
+      // with its orientation once append it into DOM
+      if (!IS_SAFARI) {
+        newImage.style.cssText = 'left:0;' + 'max-height:none!important;' + 'max-width:none!important;' + 'min-height:0!important;' + 'min-width:0!important;' + 'opacity:0;' + 'position:absolute;' + 'top:0;' + 'z-index:-1;';
+        body.appendChild(newImage);
+      }
+      return newImage;
+    }
+  } else {
+    var _newImage = document.createElement('img');
+
+    // Modern browsers (except Safari)
+    if (image.naturalWidth && !IS_SAFARI) {
+      callback(image.naturalWidth, image.naturalHeight);
+      return _newImage;
+    }
+    var _body = document.body || document.documentElement;
+    _newImage.onload = function () {
+      callback(_newImage.width, _newImage.height);
+      if (!IS_SAFARI) {
+        _body.removeChild(_newImage);
+      }
+    };
+    forEach(options.inheritedAttributes, function (name) {
+      var value = image.getAttribute(name);
+      if (value !== null) {
+        _newImage.setAttribute(name, value);
+      }
+    });
+    _newImage.src = image.src;
+
+    // iOS Safari will convert the image automatically
+    // with its orientation once append it into DOM
     if (!IS_SAFARI) {
-      body.removeChild(newImage);
+      _newImage.style.cssText = 'left:0;' + 'max-height:none!important;' + 'max-width:none!important;' + 'min-height:0!important;' + 'min-width:0!important;' + 'opacity:0;' + 'position:absolute;' + 'top:0;' + 'z-index:-1;';
+      _body.appendChild(_newImage);
     }
-  };
-  forEach(options.inheritedAttributes, function (name) {
-    var value = image.getAttribute(name);
-    if (value !== null) {
-      newImage.setAttribute(name, value);
-    }
-  });
-  newImage.src = image.src;
-
-  // iOS Safari will convert the image automatically
-  // with its orientation once append it into DOM
-  if (!IS_SAFARI) {
-    newImage.style.cssText = 'left:0;' + 'max-height:none!important;' + 'max-width:none!important;' + 'min-height:0!important;' + 'min-width:0!important;' + 'opacity:0;' + 'position:absolute;' + 'top:0;' + 'z-index:-1;';
-    body.appendChild(newImage);
+    return _newImage;
   }
-  return newImage;
 }
 
 /**
@@ -1002,35 +1043,74 @@ var render = {
 
     // initList may be called in this.update, so should keep idempotent
     list.innerHTML = '';
-    forEach(this.images, function (image, index) {
-      var src = image.src;
-      var alt = image.alt || getImageNameFromURL(src);
-      var url = _this.getImageURL(image);
-      if (src || url) {
-        var item = document.createElement('li');
-        var img = document.createElement('img');
-        forEach(options.inheritedAttributes, function (name) {
-          var value = image.getAttribute(name);
-          if (value !== null) {
-            img.setAttribute(name, value);
+    if (options.list && options.list.length) {
+      forEach(this.images, function (image, index) {
+        var src = image.url;
+        var alt = image.title || '';
+        var height = image.file_height ? Number(image.file_height) : 0;
+        var width = image.file_width ? Number(image.file_width) : 0;
+        // var url = _this.getImageURL(image);
+        if (src || url) {
+          var item = document.createElement('li');
+          var img = document.createElement('img');
+          if (options.imgSize) {
+            src += options.imgSize;
           }
-        });
-        if (options.navbar) {
-          img.src = src || url;
+          if (options.navbar) {
+            if (options.thumbSize && options.imgSize) {
+              img.src = src.replace(options.imgSize, options.thumbSize);
+            } else if (options.thumbSize && !options.imgSize) {
+              img.src = src + options.thumbSize;
+            } else {
+              img.src = src;
+            }
+          }
+          img.alt = alt;
+          img.setAttribute('data-original-url', src);
+          img.setAttribute('data-width', width);
+          img.setAttribute('data-height', height);
+          item.setAttribute('data-index', index);
+          item.setAttribute('data-viewer-action', 'view');
+          item.setAttribute('role', 'button');
+          if (options.keyboard) {
+            item.setAttribute('tabindex', 0);
+          }
+          item.appendChild(img);
+          list.appendChild(item);
+          items.push(item);
         }
-        img.alt = alt;
-        img.setAttribute('data-original-url', url || src);
-        item.setAttribute('data-index', index);
-        item.setAttribute('data-viewer-action', 'view');
-        item.setAttribute('role', 'button');
-        if (options.keyboard) {
-          item.setAttribute('tabindex', 0);
+      });
+    } else {
+      forEach(this.images, function (image, index) {
+        var src = image.src;
+        var alt = image.alt || getImageNameFromURL(src);
+        var url = _this.getImageURL(image);
+        if (src || url) {
+          var item = document.createElement('li');
+          var img = document.createElement('img');
+          forEach(options.inheritedAttributes, function (name) {
+            var value = image.getAttribute(name);
+            if (value !== null) {
+              img.setAttribute(name, value);
+            }
+          });
+          if (options.navbar) {
+            img.src = src || url;
+          }
+          img.alt = alt;
+          img.setAttribute('data-original-url', url || src);
+          item.setAttribute('data-index', index);
+          item.setAttribute('data-viewer-action', 'view');
+          item.setAttribute('role', 'button');
+          if (options.keyboard) {
+            item.setAttribute('tabindex', 0);
+          }
+          item.appendChild(img);
+          list.appendChild(item);
+          items.push(item);
         }
-        item.appendChild(img);
-        list.appendChild(item);
-        items.push(item);
-      }
-    });
+      });
+    }
     this.items = items;
     forEach(items, function (item) {
       var image = item.firstElementChild;
@@ -2985,81 +3065,93 @@ var Viewer = /*#__PURE__*/function () {
       }
       var isImg = element.localName === 'img';
       var images = [];
-      forEach(isImg ? [element] : element.querySelectorAll('img'), function (image) {
-        if (isFunction(options.filter)) {
-          if (options.filter.call(_this, image)) {
+      if (options.list && options.list.length) {
+        this.isImg = isImg;
+        this.length = this.options.list.length;
+        this.images = this.options.list;
+        this.initBody();
+        this.view();
+        // Override `transition` option if it is not supported
+        if (isUndefined(document.createElement(NAMESPACE).style.transition)) {
+          options.transition = false;
+        }
+      } else {
+        forEach(isImg ? [element] : element.querySelectorAll('img'), function (image) {
+          if (isFunction(options.filter)) {
+            if (options.filter.call(_this, image)) {
+              images.push(image);
+            }
+          } else if (_this.getImageURL(image)) {
             images.push(image);
           }
-        } else if (_this.getImageURL(image)) {
-          images.push(image);
+        });
+        this.isImg = isImg;
+        this.length = images.length;
+        this.images = images;
+        this.initBody();
+
+        // Override `transition` option if it is not supported
+        if (isUndefined(document.createElement(NAMESPACE).style.transition)) {
+          options.transition = false;
         }
-      });
-      this.isImg = isImg;
-      this.length = images.length;
-      this.images = images;
-      this.initBody();
+        if (options.inline) {
+          var count = 0;
+          var progress = function progress() {
+            count += 1;
+            if (count === _this.length) {
+              var timeout;
+              _this.initializing = false;
+              _this.delaying = {
+                abort: function abort() {
+                  clearTimeout(timeout);
+                }
+              };
 
-      // Override `transition` option if it is not supported
-      if (isUndefined(document.createElement(NAMESPACE).style.transition)) {
-        options.transition = false;
-      }
-      if (options.inline) {
-        var count = 0;
-        var progress = function progress() {
-          count += 1;
-          if (count === _this.length) {
-            var timeout;
-            _this.initializing = false;
-            _this.delaying = {
-              abort: function abort() {
-                clearTimeout(timeout);
-              }
-            };
-
-            // build asynchronously to keep `this.viewer` is accessible in `ready` event handler.
-            timeout = setTimeout(function () {
-              _this.delaying = false;
-              _this.build();
-            }, 0);
-          }
-        };
-        this.initializing = {
-          abort: function abort() {
-            forEach(images, function (image) {
-              if (!image.complete) {
-                removeListener(image, EVENT_LOAD, progress);
-                removeListener(image, EVENT_ERROR, progress);
-              }
-            });
-          }
-        };
-        forEach(images, function (image) {
-          if (image.complete) {
-            progress();
-          } else {
-            var onLoad;
-            var onError;
-            addListener(image, EVENT_LOAD, onLoad = function onLoad() {
-              removeListener(image, EVENT_ERROR, onError);
+              // build asynchronously to keep `this.viewer` is accessible in `ready` event handler.
+              timeout = setTimeout(function () {
+                _this.delaying = false;
+                _this.build();
+              }, 0);
+            }
+          };
+          this.initializing = {
+            abort: function abort() {
+              forEach(images, function (image) {
+                if (!image.complete) {
+                  removeListener(image, EVENT_LOAD, progress);
+                  removeListener(image, EVENT_ERROR, progress);
+                }
+              });
+            }
+          };
+          forEach(images, function (image) {
+            if (image.complete) {
               progress();
-            }, {
-              once: true
-            });
-            addListener(image, EVENT_ERROR, onError = function onError() {
-              removeListener(image, EVENT_LOAD, onLoad);
-              progress();
-            }, {
-              once: true
-            });
-          }
-        });
-      } else {
-        addListener(element, EVENT_CLICK, this.onStart = function (_ref) {
-          var target = _ref.target;
-          if (target.localName === 'img' && (!isFunction(options.filter) || options.filter.call(_this, target))) {
-            _this.view(_this.images.indexOf(target));
-          }
-        });
+            } else {
+              var onLoad;
+              var onError;
+              addListener(image, EVENT_LOAD, onLoad = function onLoad() {
+                removeListener(image, EVENT_ERROR, onError);
+                progress();
+              }, {
+                once: true
+              });
+              addListener(image, EVENT_ERROR, onError = function onError() {
+                removeListener(image, EVENT_LOAD, onLoad);
+                progress();
+              }, {
+                once: true
+              });
+            }
+          });
+        } else {
+          addListener(element, EVENT_CLICK, this.onStart = function (_ref) {
+            var target = _ref.target;
+            if (target.localName === 'img' && (!isFunction(options.filter) || options.filter.call(_this, target))) {
+              _this.view(_this.images.indexOf(target));
+            }
+          });
+        }
       }
     }
   }, {

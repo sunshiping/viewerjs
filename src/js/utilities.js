@@ -532,39 +532,77 @@ const IS_SAFARI = WINDOW.navigator && /(Macintosh|iPhone|iPod|iPad).*AppleWebKit
  * @returns {HTMLImageElement} The new image.
  */
 export function getImageNaturalSizes(image, options, callback) {
-  const newImage = document.createElement('img');
+  if (options.list && options.list.length) {
+    const height = image.getAttribute('data-height') ? Number(image.getAttribute('data-height')) : 0;
+    const width = image.getAttribute('data-width') ? Number(image.getAttribute('data-width')) : 0;
 
-  // Modern browsers (except Safari)
-  if (image.naturalWidth && !IS_SAFARI) {
-    callback(image.naturalWidth, image.naturalHeight);
-    return newImage;
-  }
+    if (width > 0 && height > 0) {
+      callback(width, height);
+    } else {
+      const newImage = document.createElement('img');
 
-  const body = document.body || document.documentElement;
+      // Modern browsers (except Safari)
+      if (image.naturalWidth && !IS_SAFARI) {
+        callback(image.naturalWidth, image.naturalHeight);
+        return newImage;
+      }
+      const body = document.body || document.documentElement;
+      newImage.onload = function () {
+        callback(newImage.width, newImage.height);
+        if (!IS_SAFARI) {
+          body.removeChild(newImage);
+        }
+      };
+      forEach(options.inheritedAttributes, (name) => {
+        const value = image.getAttribute(name);
+        if (value !== null) {
+          newImage.setAttribute(name, value);
+        }
+      });
+      newImage.src = image.src;
 
-  newImage.onload = () => {
-    callback(newImage.width, newImage.height);
+      // iOS Safari will convert the image automatically
+      // with its orientation once append it into DOM
+      if (!IS_SAFARI) {
+        newImage.style.cssText = 'left:0;' + 'max-height:none!important;' + 'max-width:none!important;' + 'min-height:0!important;' + 'min-width:0!important;' + 'opacity:0;' + 'position:absolute;' + 'top:0;' + 'z-index:-1;';
+        body.appendChild(newImage);
+      }
+      return newImage;
+    }
+  } else {
+    const newImage = document.createElement('img');
 
+    // Modern browsers (except Safari)
+    if (image.naturalWidth && !IS_SAFARI) {
+      callback(image.naturalWidth, image.naturalHeight);
+      return newImage;
+    }
+
+    const body = document.body || document.documentElement;
+
+    newImage.onload = () => {
+      callback(newImage.width, newImage.height);
+
+      if (!IS_SAFARI) {
+        body.removeChild(newImage);
+      }
+    };
+
+    forEach(options.inheritedAttributes, (name) => {
+      const value = image.getAttribute(name);
+
+      if (value !== null) {
+        newImage.setAttribute(name, value);
+      }
+    });
+
+    newImage.src = image.src;
+
+    // iOS Safari will convert the image automatically
+    // with its orientation once append it into DOM
     if (!IS_SAFARI) {
-      body.removeChild(newImage);
-    }
-  };
-
-  forEach(options.inheritedAttributes, (name) => {
-    const value = image.getAttribute(name);
-
-    if (value !== null) {
-      newImage.setAttribute(name, value);
-    }
-  });
-
-  newImage.src = image.src;
-
-  // iOS Safari will convert the image automatically
-  // with its orientation once append it into DOM
-  if (!IS_SAFARI) {
-    newImage.style.cssText = (
-      'left:0;'
+      newImage.style.cssText = (
+        'left:0;'
       + 'max-height:none!important;'
       + 'max-width:none!important;'
       + 'min-height:0!important;'
@@ -573,11 +611,12 @@ export function getImageNaturalSizes(image, options, callback) {
       + 'position:absolute;'
       + 'top:0;'
       + 'z-index:-1;'
-    );
-    body.appendChild(newImage);
-  }
+      );
+      body.appendChild(newImage);
+    }
 
-  return newImage;
+    return newImage;
+  }
 }
 
 /**

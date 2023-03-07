@@ -79,43 +79,81 @@ export default {
 
     // initList may be called in this.update, so should keep idempotent
     list.innerHTML = '';
-
-    forEach(this.images, (image, index) => {
-      const { src } = image;
-      const alt = image.alt || getImageNameFromURL(src);
-      const url = this.getImageURL(image);
-
-      if (src || url) {
-        const item = document.createElement('li');
-        const img = document.createElement('img');
-
-        forEach(options.inheritedAttributes, (name) => {
-          const value = image.getAttribute(name);
-
-          if (value !== null) {
-            img.setAttribute(name, value);
+    if (options.list && options.list.length) {
+      forEach(this.images, (image, index) => {
+        let src = image.url;
+        const alt = image.title || '';
+        const height = image.file_height ? Number(image.file_height) : 0;
+        const width = image.file_width ? Number(image.file_width) : 0;
+        // var url = _this.getImageURL(image);
+        if (src || url) {
+          const item = document.createElement('li');
+          const img = document.createElement('img');
+          if (options.imgSize) {
+            src += options.imgSize;
           }
-        });
-
-        if (options.navbar) {
-          img.src = src || url;
+          if (options.navbar) {
+            if (options.thumbSize && options.imgSize) {
+              img.src = src.replace(options.imgSize, options.thumbSize);
+            } else if (options.thumbSize && !options.imgSize) {
+              img.src = src + options.thumbSize;
+            } else {
+              img.src = src;
+            }
+          }
+          img.alt = alt;
+          img.setAttribute('data-original-url', src);
+          img.setAttribute('data-width', width);
+          img.setAttribute('data-height', height);
+          item.setAttribute('data-index', index);
+          item.setAttribute('data-viewer-action', 'view');
+          item.setAttribute('role', 'button');
+          if (options.keyboard) {
+            item.setAttribute('tabindex', 0);
+          }
+          item.appendChild(img);
+          list.appendChild(item);
+          items.push(item);
         }
+      });
+    } else {
+      forEach(this.images, (image, index) => {
+        const { src } = image;
+        const alt = image.alt || getImageNameFromURL(src);
+        const url = this.getImageURL(image);
 
-        img.alt = alt;
-        img.setAttribute('data-original-url', url || src);
-        item.setAttribute('data-index', index);
-        item.setAttribute('data-viewer-action', 'view');
-        item.setAttribute('role', 'button');
+        if (src || url) {
+          const item = document.createElement('li');
+          const img = document.createElement('img');
 
-        if (options.keyboard) {
-          item.setAttribute('tabindex', 0);
+          forEach(options.inheritedAttributes, (name) => {
+            const value = image.getAttribute(name);
+
+            if (value !== null) {
+              img.setAttribute(name, value);
+            }
+          });
+
+          if (options.navbar) {
+            img.src = src || url;
+          }
+
+          img.alt = alt;
+          img.setAttribute('data-original-url', url || src);
+          item.setAttribute('data-index', index);
+          item.setAttribute('data-viewer-action', 'view');
+          item.setAttribute('role', 'button');
+
+          if (options.keyboard) {
+            item.setAttribute('tabindex', 0);
+          }
+
+          item.appendChild(img);
+          list.appendChild(item);
+          items.push(item);
         }
-
-        item.appendChild(img);
-        list.appendChild(item);
-        items.push(item);
-      }
-    });
+      });
+    }
 
     this.items = items;
 

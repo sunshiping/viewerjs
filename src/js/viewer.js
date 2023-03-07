@@ -105,88 +105,99 @@ class Viewer {
 
     const isImg = element.localName === 'img';
     const images = [];
-
-    forEach(isImg ? [element] : element.querySelectorAll('img'), (image) => {
-      if (isFunction(options.filter)) {
-        if (options.filter.call(this, image)) {
+    if (options.list && options.list.length) {
+      this.isImg = isImg;
+      this.length = this.options.list.length;
+      this.images = this.options.list;
+      this.initBody();
+      this.view();
+      // Override `transition` option if it is not supported
+      if (isUndefined(document.createElement(NAMESPACE).style.transition)) {
+        options.transition = false;
+      }
+    } else {
+      forEach(isImg ? [element] : element.querySelectorAll('img'), (image) => {
+        if (isFunction(options.filter)) {
+          if (options.filter.call(this, image)) {
+            images.push(image);
+          }
+        } else if (this.getImageURL(image)) {
           images.push(image);
         }
-      } else if (this.getImageURL(image)) {
-        images.push(image);
-      }
-    });
-
-    this.isImg = isImg;
-    this.length = images.length;
-    this.images = images;
-    this.initBody();
-
-    // Override `transition` option if it is not supported
-    if (isUndefined(document.createElement(NAMESPACE).style.transition)) {
-      options.transition = false;
-    }
-
-    if (options.inline) {
-      let count = 0;
-      const progress = () => {
-        count += 1;
-
-        if (count === this.length) {
-          let timeout;
-
-          this.initializing = false;
-          this.delaying = {
-            abort: () => {
-              clearTimeout(timeout);
-            },
-          };
-
-          // build asynchronously to keep `this.viewer` is accessible in `ready` event handler.
-          timeout = setTimeout(() => {
-            this.delaying = false;
-            this.build();
-          }, 0);
-        }
-      };
-
-      this.initializing = {
-        abort: () => {
-          forEach(images, (image) => {
-            if (!image.complete) {
-              removeListener(image, EVENT_LOAD, progress);
-              removeListener(image, EVENT_ERROR, progress);
-            }
-          });
-        },
-      };
-
-      forEach(images, (image) => {
-        if (image.complete) {
-          progress();
-        } else {
-          let onLoad;
-          let onError;
-
-          addListener(image, EVENT_LOAD, onLoad = () => {
-            removeListener(image, EVENT_ERROR, onError);
-            progress();
-          }, {
-            once: true,
-          });
-          addListener(image, EVENT_ERROR, onError = () => {
-            removeListener(image, EVENT_LOAD, onLoad);
-            progress();
-          }, {
-            once: true,
-          });
-        }
       });
-    } else {
-      addListener(element, EVENT_CLICK, (this.onStart = ({ target }) => {
-        if (target.localName === 'img' && (!isFunction(options.filter) || options.filter.call(this, target))) {
-          this.view(this.images.indexOf(target));
-        }
-      }));
+
+      this.isImg = isImg;
+      this.length = images.length;
+      this.images = images;
+      this.initBody();
+
+      // Override `transition` option if it is not supported
+      if (isUndefined(document.createElement(NAMESPACE).style.transition)) {
+        options.transition = false;
+      }
+
+      if (options.inline) {
+        let count = 0;
+        const progress = () => {
+          count += 1;
+
+          if (count === this.length) {
+            let timeout;
+
+            this.initializing = false;
+            this.delaying = {
+              abort: () => {
+                clearTimeout(timeout);
+              },
+            };
+
+            // build asynchronously to keep `this.viewer` is accessible in `ready` event handler.
+            timeout = setTimeout(() => {
+              this.delaying = false;
+              this.build();
+            }, 0);
+          }
+        };
+
+        this.initializing = {
+          abort: () => {
+            forEach(images, (image) => {
+              if (!image.complete) {
+                removeListener(image, EVENT_LOAD, progress);
+                removeListener(image, EVENT_ERROR, progress);
+              }
+            });
+          },
+        };
+
+        forEach(images, (image) => {
+          if (image.complete) {
+            progress();
+          } else {
+            let onLoad;
+            let onError;
+
+            addListener(image, EVENT_LOAD, onLoad = () => {
+              removeListener(image, EVENT_ERROR, onError);
+              progress();
+            }, {
+              once: true,
+            });
+            addListener(image, EVENT_ERROR, onError = () => {
+              removeListener(image, EVENT_LOAD, onLoad);
+              progress();
+            }, {
+              once: true,
+            });
+          }
+        });
+      } else {
+        addListener(element, EVENT_CLICK, (this.onStart = ({ target }) => {
+          if (target.localName === 'img' && (!isFunction(options.filter) || options.filter.call(this, target))) {
+            this.view(this.images.indexOf(target));
+          }
+        }));
+      }
     }
   }
 
