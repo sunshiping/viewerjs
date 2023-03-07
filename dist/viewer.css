@@ -1,11 +1,11 @@
 /*!
- * Viewer.js v1.11.3
- * https://fengyuanchen.github.io/viewerjs
+ * ViewerPlus.js v0.0.2
+ * https://github.com/sunshiping/
  *
- * Copyright 2015-present Chen Fengyuan
+ * Copyright 2015-present sunshiping
  * Released under the MIT license
  *
- * Date: 2023-03-07T04:42:11.402Z
+ * Date: 2023-03-07T07:32:03.487Z
  */
 
 .viewer-zoom-in::before, .viewer-zoom-out::before, .viewer-one-to-one::before, .viewer-reset::before, .viewer-prev::before, .viewer-play::before, .viewer-next::before, .viewer-rotate-left::before, .viewer-rotate-right::before, .viewer-flip-horizontal::before, .viewer-flip-vertical::before, .viewer-fullscreen::before, .viewer-fullscreen-exit::before, .viewer-close::before {

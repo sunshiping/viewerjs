@@ -53,7 +53,7 @@ dist/
 ### Installation
 
 ```shell
-npm install viewerjs
+npm install viewer-plus
 ```
 
 In browser:
